@@ -17,10 +17,12 @@
 // TODO: there must be a smarter way to do this
 
 #define NOP     0x00
+#define JR_N	0x18
 #define LD_HLNN 0x21
 #define LD_SP   0x31
 #define SCF     0x37
 #define LD_AI   0x3E
+#define LD_AH	0x7C
 #define LD_AL	0x7D
 #define JP      0xC3
 #define CALL	0xCD
@@ -124,6 +126,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c %-20s", 5, ' ', "NOP");
 	} break;
 
+	case JR_N:
+	{
+		uint8_t offset = *(handle->PC + 1);
+
+		PRINT_DBG("%02X %*c JR 0x%02X %*c", offset, 2, ' ', offset, 12, ' ');
+
+		handle->cycles = 8;
+		handle->PC += offset;
+	} break;
+
 	case LD_HLNN:
 	{
 		uint16_t val = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
@@ -163,6 +175,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += 2;
 
 		PRINT_DBG("%02X %*c LD A, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
+	case LD_AH:
+	{
+		handle->A = handle->H;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD A, H %*c", 5, ' ', 12, ' ');
 	} break;
 
 	case LD_AL:
