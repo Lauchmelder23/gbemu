@@ -148,6 +148,19 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c LDI A, (HL) %*c", 5, ' ', 8, ' ');
 	} break;
 
+	case JR_NC:
+	{
+		uint8_t offset = *(handle->PC + 1);
+
+		PRINT_DBG("%02X %*c JR NC 0x%02X %*c", offset, 2, ' ', offset, 9, ' ');
+
+		if (!handle->F.carry)
+			handle->PC += offset;
+
+		handle->cycles = 8;
+		handle->PC += 2;
+	} break;
+
 	case LD_SP:
 	{
 		handle->SP = ram + (((uint16_t)(*(handle->PC + 2)) << 8) | (*(handle->PC + 1)));
@@ -200,6 +213,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += 2;
 
 		PRINT_DBG("%02X %*c LD A, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
+	case LD_HHL:
+	{
+		handle->H = *(ram + handle->HL);
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD H, (HL) %*c", 5, ' ', 9, ' ');
 	} break;
 
 	case LD_AB:
