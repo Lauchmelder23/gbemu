@@ -46,7 +46,7 @@ void readROM(const char* path, struct rom* buf)
 	{
 		fprintf(stderr, "ROM memory allocation failed.\n");
 		fclose(fp);
-		return -1;
+		return;
 	}
 	fread(buf->data, sizeof(uint8_t), size, fp);
 

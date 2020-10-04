@@ -14,7 +14,7 @@ int main(int argc, char** argv)
 	}
 
 	struct rom myRom;
-	readROM("roms/cpu_instrs.gb", &myRom, ram);
+	readROM("roms/cpu_instrs.gb", &myRom);
 	if (myRom.data == NULL)
 	{
 		free(ram);

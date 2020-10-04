@@ -1,6 +1,12 @@
 #ifndef _CPU_H_
 #define _CPU_H_
 
+#ifdef DEBUG
+	#define PRINT_DBG(x, ...) printf(x, __VA_ARGS__);
+#else
+	#define PRINT_DBG(x, ...)
+#endif
+
 #include <stdint.h>
 
 #include "rom.h"
@@ -74,21 +80,18 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 {
 	handle->total_cycles++;
 	if (--(handle->cycles) > 0)
-		return;
+		return 1;
 
 	uint8_t opcode = *(handle->PC);
-#ifdef DEBUG
-	printf("0x%p %x ", handle->PC - rom->data, opcode);
-#endif
+	PRINT_DBG("0x%p %x ", handle->PC - rom->data, opcode);
 
 	switch (opcode)
 	{
 	case NOP:
 		handle->cycles = 4;
 		handle->PC++;
-#ifdef DEBUG
-		printf("NOP");
-#endif
+
+		PRINT_DBG("NOP");
 		break;
 
 	case SCF:
@@ -96,9 +99,8 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 		handle->cycles = 4;
 		handle->PC++;
-#ifdef DEBUG
-		printf("NOP");
-#endif
+
+		PRINT_DBG("NOP");
 		break;
 
 	case JP:
@@ -109,9 +111,8 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 		handle->cycles = 12;
 		handle->PC = rom->data + jp_addr;
-#ifdef DEBUG
-		printf("%x %x JP 0x%x", lo_byte, hi_byte, jp_addr);
-#endif
+
+		PRINT_DBG("%x %x JP 0x%x", lo_byte, hi_byte, jp_addr);
 	} break;
 
 	default:
@@ -119,11 +120,9 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		return 0;
 	}
 
-#ifdef DEBUG
-	printf("\t\t CYC: %u\n", handle->total_cycles);
-#endif
+	PRINT_DBG("\t\t CYC: %u\n", handle->total_cycles);
 
 	return 1;
 }
 
-#endif _CPU_H_
+#endif //_CPU_H_
