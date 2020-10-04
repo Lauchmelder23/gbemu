@@ -83,7 +83,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		return 1;
 
 	uint8_t opcode = *(handle->PC);
-	PRINT_DBG("0x%p %x ", handle->PC - rom->data, opcode);
+	PRINT_DBG("0x%04X %02X ", handle->PC - rom->data, opcode);
 
 	switch (opcode)
 	{
@@ -91,7 +91,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->cycles = 4;
 		handle->PC++;
 
-		PRINT_DBG("NOP");
+		PRINT_DBG("%*c %-20s", 5, ' ', "NOP");
 		break;
 
 	case SCF:
@@ -100,7 +100,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->cycles = 4;
 		handle->PC++;
 
-		PRINT_DBG("NOP");
+		PRINT_DBG("%*c NOP %*c", 5, ' ', 20, ' ');
 		break;
 
 	case JP:
@@ -112,7 +112,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->cycles = 12;
 		handle->PC = rom->data + jp_addr;
 
-		PRINT_DBG("%x %x JP 0x%x", lo_byte, hi_byte, jp_addr);
+		PRINT_DBG("%02X %02X JP 0x%04X %*c", lo_byte, hi_byte, jp_addr, 10, ' ');
 	} break;
 
 	default:
@@ -120,7 +120,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		return 0;
 	}
 
-	PRINT_DBG("\t\t CYC: %u\n", handle->total_cycles);
+	PRINT_DBG("CYC: %u\n", handle->total_cycles);
 
 	return 1;
 }
