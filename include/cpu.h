@@ -32,7 +32,9 @@
 #define LDD_HLA 0x32
 #define SCF     0x37
 #define JR_C	0x38
+#define INC_A	0x3C
 #define LD_AI   0x3E
+#define LD_HB	0x60
 #define LD_HHL	0x66
 #define LD_AB	0x78
 #define LD_AH	0x7C

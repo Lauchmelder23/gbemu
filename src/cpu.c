@@ -62,7 +62,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->F.zero = (handle->B == 0);
 		handle->F.negative = 1;
 		handle->F.half_carry = (handle->B & 0x10);
-		handle->F.half_carry = (handle->B & 0x100);
+		handle->F.carry = (handle->B & 0x100);
 
 		handle->cycles = 4;
 		handle->PC++;
@@ -205,6 +205,20 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += 2;
 	} break;
 
+	case INC_A:
+	{
+		handle->A++;
+
+		handle->F.zero = (handle->A == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = (handle->A & 0x10);
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c INC A %*c", 5, ' ', 14, ' ');
+	} break;
+
 	case LD_AI:
 	{
 		handle->A = *(handle->PC + 1);
@@ -213,6 +227,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += 2;
 
 		PRINT_DBG("%02X %*c LD A, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
+	case LD_HB:
+	{
+		handle->H = handle->B;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD H, B %*c", 5, ' ', 12, ' ');
 	} break;
 
 	case LD_HHL:
