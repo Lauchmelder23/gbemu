@@ -7,16 +7,26 @@
 	#define PRINT_DBG(x, ...)
 #endif
 
+#define PUSH(PC) (*(--handle->SP) = (PC))
+#define POP() (*(handle->SP++))
+
 #include <stdint.h>
 
 #include "rom.h"
 
-#define NOP    0x00
-#define LD_SP  0x31
-#define SCF    0x37
-#define JP     0xC3
-#define LD_NNA 0xEA
-#define DI     0xF3	
+// TODO: there must be a smarter way to do this
+
+#define NOP     0x00
+#define LD_HLNN 0x21
+#define LD_SP   0x31
+#define SCF     0x37
+#define LD_AI   0x3E
+#define LD_AL	0x7D
+#define JP      0xC3
+#define CALL	0xCD
+#define LDH_NA  0xE0
+#define LD_NNA  0xEA
+#define DI      0xF3	
 
 union flag_register
 {
@@ -107,29 +117,63 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 	switch (opcode)
 	{
 	case NOP:
+	{
 		handle->cycles = 4;
 		handle->PC++;
 
 		PRINT_DBG("%*c %-20s", 5, ' ', "NOP");
-		break;
+	} break;
+
+	case LD_HLNN:
+	{
+		uint16_t val = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
+		handle->HL = val;
+		
+		handle->cycles = 12;
+		handle->PC += 3;
+
+		PRINT_DBG("%02X %02X LD HL, 0x%04X %*c", *(handle->PC - 2), *(handle->PC - 1), val, 6, ' ');
+	} break;
 
 	case LD_SP:
+	{
 		handle->SP = ram + (((uint16_t)(*(handle->PC + 2)) << 8) | (*(handle->PC + 1)));
 
 		handle->cycles = 12;
 		handle->PC += 3;
 
-		PRINT_DBG("%02X %02X LD SP %*c", *(handle->PC - 2), *(handle->PC - 1), 14, ' ');
-		break;
+		PRINT_DBG("%02X %02X LD SP, 0x%04X %*c", *(handle->PC - 2), *(handle->PC - 1), handle->SP - ram, 6, ' ');
+	} break;
 
 	case SCF:
+	{
 		handle->F.carry = 1;
 
 		handle->cycles = 4;
 		handle->PC++;
 
 		PRINT_DBG("%*c NOP %*c", 5, ' ', 20, ' ');
-		break;
+	} break;
+
+	case LD_AI:
+	{
+		handle->A = *(handle->PC + 1);
+
+		handle->cycles = 8;
+		handle->PC += 2;
+
+		PRINT_DBG("%02X %*c LD A, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
+	case LD_AL:
+	{
+		handle->A = handle->L;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD A, L %*c", 5, ' ', 12, ' ');
+	} break;
 
 	case JP:
 	{
@@ -143,25 +187,49 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %02X JP $%04X %*c", lo_byte, hi_byte, jp_addr, 11, ' ');
 	} break;
 
+	case CALL:
+	{
+		uint16_t addr = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
+
+		PUSH((uint8_t*)((handle->PC - ram + 3) & 0x00FF));
+		PUSH((uint8_t*)((handle->PC - ram + 3) >> 8));
+
+		PRINT_DBG("%02X %02X CALL $%04X %*c", *(handle->PC + 1), *(handle->PC + 2), addr, 9, ' ');
+
+		handle->cycles = 12;
+		handle->PC = rom->data + addr;
+	} break;
+
+	case LDH_NA:
+	{
+		*(ram + 0xFF00 + *(handle->PC + 1)) = handle->A;
+		
+		handle->cycles = 12;
+		handle->PC += 2;
+
+		PRINT_DBG("%02X %*c LDH ($FF00+%02X), A %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 2, ' ');
+	} break;
+
 	case LD_NNA:
 	{
-		uint16_t addr = ((uint16_t)(*handle->PC + 2) << 8) | *(handle->PC + 1);
+		uint16_t addr = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
 		*(ram + addr) = handle->A;
 		
 		handle->cycles = 16;
 		handle->PC += 3;
 
-		PRINT_DBG("%02X %02X LD ($%04X), A %*c", *(handle->PC + 1), *(handle->PC + 2), addr, 6, ' ');
+		PRINT_DBG("%02X %02X LD ($%04X), A %*c", *(handle->PC - 2), *(handle->PC - 1), addr, 6, ' ');
 	} break;
 
 	case DI:
+	{
 		handle->interrupt = -1;
 
 		handle->cycles = 4;
 		handle->PC++;
 
 		PRINT_DBG("%*c DI %*c", 5, ' ', 17, ' ');
-		break;
+	} break;
 
 	default:
 		fprintf(stderr, "Unknown opcode.");
@@ -176,7 +244,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 	}
 
 
-	PRINT_DBG("SP: %04X I: %02X CYC: %u\n", handle->SP - ram, *(ram + 0xFFFF), handle->total_cycles);
+	PRINT_DBG("AF: %04X BC: %04X DE: %04X, HL: %04X SP: %04X I: %02X CYC: %u\n", handle->AF, handle->BC, handle->DE, handle->HL, handle->SP - ram, *(ram + 0xFFFF), handle->total_cycles);
 
 	return 1;
 }
