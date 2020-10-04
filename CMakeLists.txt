@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project("GBemu")
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-	message("Debug build detected. Defining macros...")
+	message(STATUS "Debug build detected. Defining macros...")
 	add_compile_definitions(DEBUG)
 endif()
 
