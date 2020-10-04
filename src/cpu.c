@@ -117,12 +117,23 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %02X JP $%04X %*c", lo_byte, hi_byte, jp_addr, 11, ' ');
 	} break;
 
+	case RET:
+	{
+		uint8_t hi = POP();
+		uint8_t lo = POP();
+		handle->PC = (rom->data + (((uint16_t)hi << 8) | lo));
+
+		handle->cycles = 8;
+
+		PRINT_DBG("%*c RET $%04X %*c", 5, ' ', handle->PC - rom->data, 10, ' ');
+	} break;
+
 	case CALL:
 	{
 		uint16_t addr = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
 
-		PUSH((uint8_t*)((handle->PC - ram + 3) & 0x00FF));
-		PUSH((uint8_t*)((handle->PC - ram + 3) >> 8));
+		PUSH((uint8_t*)((handle->PC - rom->data + 3) & 0x00FF));
+		PUSH((uint8_t*)((handle->PC - rom->data + 3) >> 8));
 
 		PRINT_DBG("%02X %02X CALL $%04X %*c", *(handle->PC + 1), *(handle->PC + 2), addr, 9, ' ');
 
@@ -138,6 +149,18 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += 2;
 
 		PRINT_DBG("%02X %*c LDH ($FF00+%02X), A %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 2, ' ');
+	} break;
+
+	case PUSH_HL:
+	{
+		PUSH(handle->L);
+		PUSH(handle->H);
+
+		handle->cycles = 16;
+		handle->PC++;
+
+		PRINT_DBG("%*c PUSH HL %*c", 5, ' ', 12, ' ');
+
 	} break;
 
 	case LD_NNA:

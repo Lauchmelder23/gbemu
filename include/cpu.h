@@ -25,8 +25,10 @@
 #define LD_AH	0x7C
 #define LD_AL	0x7D
 #define JP      0xC3
+#define RET		0xC9
 #define CALL	0xCD
 #define LDH_NA  0xE0
+#define PUSH_HL	0xE5
 #define LD_NNA  0xEA
 #define DI      0xF3	
 
