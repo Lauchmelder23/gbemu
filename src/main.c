@@ -6,10 +6,10 @@
 
 int main(int argc, char** argv)
 {
-	uint8_t* ram = (uint8_t*)malloc(UINT16_MAX);
+	uint8_t* ram = (uint8_t*)malloc(UINT16_MAX + 1);
 	if (ram == NULL)
 	{
-		fprintf(stderr, "Failed to allocate memory for RAM (%u Bytes)\n", UINT16_MAX);
+		fprintf(stderr, "Failed to allocate memory for RAM (%u Bytes)\n", UINT16_MAX + 1);
 		return -1;
 	}
 
@@ -22,9 +22,7 @@ int main(int argc, char** argv)
 	}
 
 	struct cpu myCpu;
-	myCpu.cycles = 1;
-	myCpu.total_cycles = 0;
-	myCpu.PC = myRom.entrypoint;
+	init_cpu(&myCpu, &myRom, ram);
 
 	while (exec_instr(&myCpu, &myRom, ram));
 
