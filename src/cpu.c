@@ -197,7 +197,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 	}
 
 
-	PRINT_DBG("AF: %04X BC: %04X DE: %04X, HL: %04X SP: %04X I: %02X CYC: %I64u\n", handle->AF, handle->BC, handle->DE, handle->HL, (uint16_t)(handle->SP - ram), *(ram + 0xFFFF), handle->total_cycles);
+	PRINT_DBG("AF: %04X BC: %04X DE: %04X, HL: %04X SP: %04X I: %02X CYC: %llu\n", handle->AF, handle->BC, handle->DE, handle->HL, (uint16_t)(handle->SP - ram), *(ram + 0xFFFF), handle->total_cycles);
 
 	return 1;
 }
