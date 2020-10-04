@@ -87,6 +87,19 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c INC HL %*c", 5, ' ', 13, ' ');
 	} break;
 
+	case JR_Z:
+	{
+		uint8_t offset = *(handle->PC + 1);
+		
+		PRINT_DBG("%02X %*c JR Z 0x%02X %*c", offset, 2, ' ', offset, 10, ' ');
+		
+		if (handle->F.zero)
+			handle->PC += offset;
+
+		handle->cycles = 8;
+		handle->PC += 2;
+	} break;
+
 	case LDI_AHL:
 	{
 		handle->A = *(ram + handle->HL++);
@@ -127,6 +140,17 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %*c LD A, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
 	} break;
 
+	case LD_AB:
+	{
+		handle->A = handle->B;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD A, B %*c", 5, ' ', 12, ' ');
+
+	} break;
+
 	case LD_AH:
 	{
 		handle->A = handle->H;
@@ -145,6 +169,19 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC++;
 
 		PRINT_DBG("%*c LD A, L %*c", 5, ' ', 12, ' ');
+	} break;
+
+	case OR_C:
+	{
+		handle->A |= handle->C;
+
+		handle->F.val = 0x00;
+		handle->F.zero = (handle->A == 0);
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c OR C %*c", 5, ' ', 15, ' ');
 	} break;
 
 	case JP:
@@ -237,6 +274,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %02X LD ($%04X), A %*c", *(handle->PC - 2), *(handle->PC - 1), addr, 6, ' ');
 	} break;
 
+	case LDH_AN:
+	{
+		handle->A = *(ram + 0xFF00 + *(handle->PC + 1));
+
+		handle->cycles = 12;
+		handle->PC += 2;
+
+		PRINT_DBG("%02X %*c LDH A, ($FF00+%02X) %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 2, ' ');
+	} break;
+
 	case POP_AF:
 	{
 		handle->A = POP();
@@ -267,6 +314,21 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC++;
 
 		PRINT_DBG("%*c PUSH AF %*c", 5, ' ', 12, ' ');
+	} break;
+
+	case CP_IMM:
+	{
+		uint16_t tmp = handle->A - *(handle->PC + 1);
+
+		handle->F.zero = (tmp == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = (tmp & 0x10);
+		handle->F.half_carry = (tmp & 0x100);
+
+		handle->cycles = 8;
+		handle->PC += 2;
+
+		PRINT_DBG("%*c CP 0x%02X %*c", 5, ' ', *(handle->PC - 1), 12, ' ');
 	} break;
 
 	default:

@@ -22,12 +22,15 @@
 #define JR_N	0x18
 #define LD_HLNN 0x21
 #define INC_HL	0x23
+#define JR_Z	0x28
 #define LDI_AHL 0x2A
 #define LD_SP   0x31
 #define SCF     0x37
 #define LD_AI   0x3E
+#define LD_AB	0x78
 #define LD_AH	0x7C
 #define LD_AL	0x7D
+#define OR_C	0xB1
 #define JP      0xC3
 #define PUSH_BC 0xC5
 #define RET		0xC9
@@ -36,9 +39,11 @@
 #define POP_HL  0xE1
 #define PUSH_HL	0xE5
 #define LD_NNA  0xEA
+#define LDH_AN	0xF0
 #define POP_AF	0xF1
 #define DI      0xF3
 #define PUSH_AF 0xF5
+#define CP_IMM	0xFE
 
 union flag_register
 {
