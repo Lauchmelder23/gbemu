@@ -102,7 +102,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 	int8_t interruptSet = handle->interrupt;
 
 	uint8_t opcode = *(handle->PC);
-	PRINT_DBG("0x%04X %02X ", handle->PC - rom->data, opcode);
+	PRINT_DBG("$%04X %02X ", handle->PC - rom->data, opcode);
 
 	switch (opcode)
 	{
@@ -140,7 +140,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->cycles = 12;
 		handle->PC = rom->data + jp_addr;
 
-		PRINT_DBG("%02X %02X JP 0x%04X %*c", lo_byte, hi_byte, jp_addr, 10, ' ');
+		PRINT_DBG("%02X %02X JP $%04X %*c", lo_byte, hi_byte, jp_addr, 11, ' ');
 	} break;
 
 	case LD_NNA:
@@ -151,7 +151,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->cycles = 16;
 		handle->PC += 3;
 
-		PRINT_DBG("%02X %02X LD (0x%04X), A %*c", *(handle->PC + 1), *(handle->PC + 2), addr, 5, ' ');
+		PRINT_DBG("%02X %02X LD ($%04X), A %*c", *(handle->PC + 1), *(handle->PC + 2), addr, 6, ' ');
 	} break;
 
 	case DI:
