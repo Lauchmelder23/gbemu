@@ -55,6 +55,31 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c INC BC %*c", 5, ' ', 13, ' ');
 	} break;
 
+	case DEC_B:
+	{
+		handle->B--;
+
+		handle->F.zero = (handle->B == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = (handle->B & 0x10);
+		handle->F.half_carry = (handle->B & 0x100);
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c DEC B %*c", 5, ' ', 14, ' ');
+	} break;
+
+	case LD_BN:
+	{
+		handle->B = *(handle->PC + 1);
+
+		handle->cycles = 8;
+		handle->PC += 2;
+
+		PRINT_DBG("%02X %*c LD B, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
 	case JR_N:
 	{
 		uint8_t offset = *(handle->PC + 1);
@@ -85,6 +110,19 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC++;
 
 		PRINT_DBG("%*c INC HL %*c", 5, ' ', 13, ' ');
+	} break;
+
+	case JR_NZ:
+	{
+		uint8_t offset = *(handle->PC + 1);
+
+		PRINT_DBG("%02X %*c JR NZ 0x%02X %*c", offset, 2, ' ', offset, 9, ' ');
+
+		if (!handle->F.zero)
+			handle->PC += offset;
+
+		handle->cycles = 8;
+		handle->PC += 2;
 	} break;
 
 	case JR_Z:
@@ -120,6 +158,17 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %02X LD SP, 0x%04X %*c", *(handle->PC - 2), *(handle->PC - 1), (uint16_t)(handle->SP - ram), 6, ' ');
 	} break;
 
+	case LDD_HLA:
+	{
+		*(ram + handle->HL) = handle->A;
+		handle->HL--;
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c LDD (HL), A %*c", 5, ' ', 8, ' ');
+	} break;
+
 	case SCF:
 	{
 		handle->F.carry = 1;
@@ -128,6 +177,19 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC++;
 
 		PRINT_DBG("%*c NOP %*c", 5, ' ', 20, ' ');
+	} break;
+
+	case JR_C:
+	{
+		uint8_t offset = *(handle->PC + 1);
+
+		PRINT_DBG("%02X %*c JR C 0x%02X %*c", offset, 2, ' ', offset, 10, ' ');
+
+		if (handle->F.carry)
+			handle->PC += offset;
+
+		handle->cycles = 8;
+		handle->PC += 2;
 	} break;
 
 	case LD_AI:
@@ -169,6 +231,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC++;
 
 		PRINT_DBG("%*c LD A, L %*c", 5, ' ', 12, ' ');
+	} break;
+
+	case LD_AHL:
+	{
+		handle->A = *(ram + handle->HL);
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD A, ($%04X) %*c", 5, ' ', handle->HL, 6, ' ');
 	} break;
 
 	case OR_C:
