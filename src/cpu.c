@@ -22,7 +22,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 	int8_t interruptSet = handle->interrupt;
 
 	uint8_t opcode = *(handle->PC);
-	PRINT_DBG("$%04X %02X ", handle->PC - rom->data, opcode);
+	PRINT_DBG("$%04X %02X ", (uint16_t)(handle->PC - rom->data), opcode);
 
 	switch (opcode)
 	{
@@ -62,7 +62,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->cycles = 12;
 		handle->PC += 3;
 
-		PRINT_DBG("%02X %02X LD SP, 0x%04X %*c", *(handle->PC - 2), *(handle->PC - 1), handle->SP - ram, 6, ' ');
+		PRINT_DBG("%02X %02X LD SP, 0x%04X %*c", *(handle->PC - 2), *(handle->PC - 1), (uint16_t)(handle->SP - ram), 6, ' ');
 	} break;
 
 	case SCF:
@@ -125,15 +125,15 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 		handle->cycles = 8;
 
-		PRINT_DBG("%*c RET $%04X %*c", 5, ' ', handle->PC - rom->data, 10, ' ');
+		PRINT_DBG("%*c RET $%04X %*c", 5, ' ', (uint16_t)(handle->PC - rom->data), 10, ' ');
 	} break;
 
 	case CALL:
 	{
 		uint16_t addr = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
 
-		PUSH((uint8_t*)((handle->PC - rom->data + 3) & 0x00FF));
-		PUSH((uint8_t*)((handle->PC - rom->data + 3) >> 8));
+		PUSH((uint8_t)((handle->PC - rom->data + 3) & 0x00FF));
+		PUSH((uint8_t)((handle->PC - rom->data + 3) >> 8));
 
 		PRINT_DBG("%02X %02X CALL $%04X %*c", *(handle->PC + 1), *(handle->PC + 2), addr, 9, ' ');
 
@@ -197,7 +197,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 	}
 
 
-	PRINT_DBG("AF: %04X BC: %04X DE: %04X, HL: %04X SP: %04X I: %02X CYC: %u\n", handle->AF, handle->BC, handle->DE, handle->HL, handle->SP - ram, *(ram + 0xFFFF), handle->total_cycles);
+	PRINT_DBG("AF: %04X BC: %04X DE: %04X, HL: %04X SP: %04X I: %02X CYC: %llu\n", handle->AF, handle->BC, handle->DE, handle->HL, (uint16_t)(handle->SP - ram), *(ram + 0xFFFF), handle->total_cycles);
 
 	return 1;
 }

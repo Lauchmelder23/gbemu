@@ -2,7 +2,7 @@
 #define _CPU_H_
 
 #ifdef DEBUG
-	#define PRINT_DBG(x, ...) printf(x, __VA_ARGS__);
+	#define PRINT_DBG(x, ...) printf(x, __VA_ARGS__)
 #else
 	#define PRINT_DBG(x, ...)
 #endif
