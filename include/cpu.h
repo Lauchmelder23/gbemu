@@ -17,20 +17,28 @@
 // TODO: there must be a smarter way to do this
 
 #define NOP     0x00
+#define LD_BCNN	0x01
+#define INC_BC	0x03
 #define JR_N	0x18
 #define LD_HLNN 0x21
+#define INC_HL	0x23
+#define LDI_AHL 0x2A
 #define LD_SP   0x31
 #define SCF     0x37
 #define LD_AI   0x3E
 #define LD_AH	0x7C
 #define LD_AL	0x7D
 #define JP      0xC3
+#define PUSH_BC 0xC5
 #define RET		0xC9
 #define CALL	0xCD
 #define LDH_NA  0xE0
+#define POP_HL  0xE1
 #define PUSH_HL	0xE5
 #define LD_NNA  0xEA
-#define DI      0xF3	
+#define POP_AF	0xF1
+#define DI      0xF3
+#define PUSH_AF 0xF5
 
 union flag_register
 {

@@ -34,6 +34,27 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c %-20s", 5, ' ', "NOP");
 	} break;
 
+	case LD_BCNN:
+	{
+		uint16_t val = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
+		handle->BC = val;
+
+		handle->cycles = 12;
+		handle->PC += 3;
+
+		PRINT_DBG("%02X %02X LD BC, 0x%04X %*c", *(handle->PC - 2), *(handle->PC - 1), val, 6, ' ');
+	} break;
+
+	case INC_BC:
+	{
+		handle->BC++;
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c INC BC %*c", 5, ' ', 13, ' ');
+	} break;
+
 	case JR_N:
 	{
 		uint8_t offset = *(handle->PC + 1);
@@ -41,6 +62,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %*c JR 0x%02X %*c", offset, 2, ' ', offset, 12, ' ');
 
 		handle->cycles = 8;
+		handle->PC += 2;
 		handle->PC += offset;
 	} break;
 
@@ -53,6 +75,26 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += 3;
 
 		PRINT_DBG("%02X %02X LD HL, 0x%04X %*c", *(handle->PC - 2), *(handle->PC - 1), val, 6, ' ');
+	} break;
+
+	case INC_HL:
+	{
+		handle->HL++;
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c INC HL %*c", 5, ' ', 13, ' ');
+	} break;
+
+	case LDI_AHL:
+	{
+		handle->A = *(ram + handle->HL++);
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c LDI A, (HL) %*c", 5, ' ', 8, ' ');
 	} break;
 
 	case LD_SP:
@@ -117,6 +159,17 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %02X JP $%04X %*c", lo_byte, hi_byte, jp_addr, 11, ' ');
 	} break;
 
+	case PUSH_BC:
+	{
+		PUSH(handle->C);
+		PUSH(handle->B);
+
+		handle->cycles = 16;
+		handle->PC++;
+
+		PRINT_DBG("%*c PUSH BC %*c", 5, ' ', 12, ' ');
+	} break;
+
 	case RET:
 	{
 		uint8_t hi = POP();
@@ -151,6 +204,17 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %*c LDH ($FF00+%02X), A %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 2, ' ');
 	} break;
 
+	case POP_HL:
+	{
+		handle->H = POP();
+		handle->L = POP();
+
+		handle->cycles = 12;
+		handle->PC++;
+
+		PRINT_DBG("%*c POP HL %*c", 5, ' ', 13, ' ');
+	} break;
+
 	case PUSH_HL:
 	{
 		PUSH(handle->L);
@@ -160,7 +224,6 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC++;
 
 		PRINT_DBG("%*c PUSH HL %*c", 5, ' ', 12, ' ');
-
 	} break;
 
 	case LD_NNA:
@@ -174,6 +237,17 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %02X LD ($%04X), A %*c", *(handle->PC - 2), *(handle->PC - 1), addr, 6, ' ');
 	} break;
 
+	case POP_AF:
+	{
+		handle->A = POP();
+		handle->F.val = POP();
+
+		handle->cycles = 12;
+		handle->PC++;
+
+		PRINT_DBG("%*c POP AF %*c", 5, ' ', 13, ' ');
+	} break;
+
 	case DI:
 	{
 		handle->interrupt = -1;
@@ -182,6 +256,17 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC++;
 
 		PRINT_DBG("%*c DI %*c", 5, ' ', 17, ' ');
+	} break;
+
+	case PUSH_AF:
+	{
+		PUSH(handle->F.val);
+		PUSH(handle->A);
+
+		handle->cycles = 16;
+		handle->PC++;
+
+		PRINT_DBG("%*c PUSH AF %*c", 5, ' ', 12, ' ');
 	} break;
 
 	default:
