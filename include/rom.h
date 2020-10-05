@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern const uint8_t BOOTLOADER[256];
+
 struct rom
 {
 	uint8_t* data;

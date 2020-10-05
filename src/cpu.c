@@ -1,58 +1,24 @@
 #include "cpu.h"
 #include "rom.h"
 
-const uint8_t BOOTLOADER[256] = {
-	0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32,
-	0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
-	0x11, 0x3E, 0x80, 0x32, 0xE2, 0x0C, 0x3E, 0xF3,
-	0xE2, 0x32, 0x3E, 0x77, 0x77, 0x3E, 0xFC, 0xE0,
-	0x47, 0x11, 0x04, 0x01, 0x21, 0x10, 0x80, 0x1A,
-	0xCD, 0x95, 0x00, 0xCD, 0x96, 0x00, 0x13, 0x7B,
-	0xFE, 0x34, 0x20, 0xF3, 0x11, 0xD8, 0x00, 0x06,
-	0x08, 0x1A, 0x13, 0x22, 0x23, 0x05, 0x20, 0xF9,
-	0x3E, 0x19, 0xEA, 0x10, 0x99, 0x21, 0x2F, 0x99,
-	0x0E, 0x0C, 0x3D, 0x28, 0x08, 0x32, 0x0D, 0x20,
-	0xF9, 0x2E, 0x0F, 0x18, 0xF3, 0x67, 0x3E, 0x64,
-	0x57, 0xE0, 0x42, 0x3E, 0x91, 0xE0, 0x40, 0x04,
-	0x1E, 0x02, 0x0E, 0x0C, 0xF0, 0x44, 0xFE, 0x90,
-	0x20, 0xFA, 0x0D, 0x20, 0xF7, 0x1D, 0x20, 0xF2,
-	0x0E, 0x13, 0x24, 0x7C, 0x1E, 0x83, 0xFE, 0x62,
-	0x28, 0x06, 0x1E, 0xC1, 0xFE, 0x64, 0x20, 0x06,
-	0x7B, 0xE2, 0x0C, 0x3E, 0x87, 0xE2, 0xF0, 0x42,
-	0x90, 0xE0, 0x42, 0x15, 0x20, 0xD2, 0x05, 0x20,
-	0x4F, 0x16, 0x20, 0x18, 0xCB, 0x4F, 0x06, 0x04,
-	0xC5, 0xCB, 0x11, 0x17, 0xC1, 0xCB, 0x11, 0x17,
-	0x05, 0x20, 0xF5, 0x22, 0x23, 0x22, 0x23, 0xC9,
-	0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B,
-	0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
-	0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E,
-	0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99,
-	0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC,
-	0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E,
-	0x3C, 0x42, 0xB9, 0xA5, 0xB9, 0xA5, 0x42, 0x3C,
-	0x21, 0x04, 0x01, 0x11, 0xA8, 0x00, 0x1A, 0x13,
-	0xBE, 0x20, 0xFE, 0x23, 0x7D, 0xFE, 0x34, 0x20,
-	0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20,
-	0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50
-};
-
 uint8_t reset_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram)
 {
+	handle->state = BOOT;
 	handle->cycles = 1;
 	handle->total_cycles = 0;
-	handle->PC = BOOTLOADER;
+	handle->PC = rom->data;
 
 	PRINT_DBG("----- STARTING BOOT SEQUENCE -----\n");
-	while (handle->PC >= BOOTLOADER && handle->PC < BOOTLOADER + 256)
+	while (handle->PC >= rom->data && handle->PC < rom->data + 256)
 	{
 		if (!exec_instr(handle, rom, ram)) return 0;
 	}
 
 	handle->PC = rom->data + 0x100;
+	handle->state = RUN;
 	PRINT_DBG("----- FINISHED BOOT SEQUENCE -----\n");
 	return 1;
 }
-
 
 uint8_t handle_cb_opcode(struct cpu* handle, struct rom* rom, uint8_t* ram)
 {
@@ -76,6 +42,22 @@ uint8_t handle_cb_opcode(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 	switch (opcode & 0xF0)
 	{
+	case 0x10:
+	{
+		if ((opcode & 0x08) == 0)	// RL
+		{
+			handle->F.carry = ((*reg & 0x80) != 0);
+			*reg <<= 1;
+			handle->F.zero = (*reg == 0);
+			PRINT_DBG("RL %s %*c", arg, 15, ' ');
+		} else {	// RR
+			handle->F.carry = ((*reg & 0x01) != 0);
+			*reg >>= 1;
+			handle->F.zero = (*reg == 0);
+			PRINT_DBG("RR %s %*c", arg, 15, ' ');
+		}
+	} break;
+
 	case 0x40:
 	case 0x50:
 	case 0x60:
@@ -98,7 +80,6 @@ uint8_t handle_cb_opcode(struct cpu* handle, struct rom* rom, uint8_t* ram)
 	handle->PC += 2;
 	return 1;
 }
-
 
 uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 {
@@ -142,14 +123,29 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c INC BC %*c", 5, ' ', 13, ' ');
 	} break;
 
+	case INC_B:
+	{
+		uint8_t tmp = handle->B + 1;
+
+		handle->F.zero = (handle->B == 0);
+		handle->F.negative = 0;
+		handle->F.half_carry = ((tmp & 0xF) | (handle->B & 0xF));
+
+		handle->B = tmp;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c INC B %*c", 5, ' ', 14, ' ');
+	} break;
+
 	case DEC_B:
 	{
-		uint16_t tmp = handle->B - 1;
+		uint8_t tmp = handle->B - 1;
 
 		handle->F.zero = (handle->B == 0);
 		handle->F.negative = 1;
 		handle->F.half_carry = ((tmp & 0x10) != (handle->B & 0x10));
-		handle->F.carry = (tmp & 0x100);
 
 		handle->B = tmp;
 
@@ -185,6 +181,22 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c INC C %*c", 5, ' ', 14, ' ');
 	} break;
 
+	case DEC_C:
+	{
+		uint8_t tmp = handle->C - 1;
+
+		handle->F.zero = (handle->C == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = ((tmp & 0x10) != (handle->C & 0x10));
+
+		handle->C = tmp;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c DEC C %*c", 5, ' ', 14, ' ');
+	} break;
+
 	case LD_CN:
 	{
 		handle->C = *(handle->PC + 1);
@@ -193,6 +205,38 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += 2;
 
 		PRINT_DBG("%02X %*c LD C, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
+	case LD_DENN:
+	{
+		uint16_t val = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
+		handle->DE = val;
+
+		handle->cycles = 12;
+		handle->PC += 3;
+
+		PRINT_DBG("%02X %02X LD DE, 0x%04X %*c", *(handle->PC - 2), *(handle->PC - 1), val, 6, ' ');
+	} break;
+
+	case INC_DE:
+	{
+		handle->DE++;
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c INC DE %*c", 5, ' ', 13, ' ');
+	} break;
+
+	case RLA:
+	{
+		handle->F.carry = ((handle->A & 0x80) != 0);
+		handle->A <<= 1;
+		handle->F.zero = (handle->A == 0);
+
+		handle->cycles = 4;
+		handle->PC++;
+		PRINT_DBG("%*c RLA %*c", 5, ' ', 16, ' ');
 	} break;
 
 	case JR_N:
@@ -206,6 +250,26 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += offset;
 	} break;
 
+	case LD_ADE:
+	{
+		handle->A = *(ram + handle->DE);
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c LDI A, (DE) %*c", 5, ' ', 8, ' ');
+	} break;
+
+	case LD_EN:
+	{
+		handle->E = *(handle->PC + 1);
+
+		handle->cycles = 8;
+		handle->PC += 2;
+
+		PRINT_DBG("%02X %*c LD E, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
 	case LD_HLNN:
 	{
 		uint16_t val = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
@@ -215,6 +279,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += 3;
 
 		PRINT_DBG("%02X %02X LD HL, 0x%04X %*c", *(handle->PC - 2), *(handle->PC - 1), val, 6, ' ');
+	} break;
+
+	case LDI_HLA:
+	{
+		*(ram + handle->HL++) = handle->A;
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c LDI (HL), A %*c", 5, ' ', 8, ' ');
 	} break;
 
 	case INC_HL:
@@ -261,6 +335,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC++;
 
 		PRINT_DBG("%*c LDI A, (HL) %*c", 5, ' ', 8, ' ');
+	} break;
+
+	case LD_LN:
+	{
+		handle->L = *(handle->PC + 1);
+
+		handle->cycles = 8;
+		handle->PC += 2;
+
+		PRINT_DBG("%02X %*c LD L, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
 	} break;
 
 	case JR_NC:
@@ -336,6 +420,22 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c INC A %*c", 5, ' ', 14, ' ');
 	} break;
 
+	case DEC_A:
+	{
+		uint8_t tmp = handle->A - 1;
+
+		handle->F.zero = (handle->A == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = ((tmp & 0x10) != (handle->A & 0x10));
+
+		handle->A = tmp;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c DEC A %*c", 5, ' ', 14, ' ');
+	} break;
+
 	case LD_AI:
 	{
 		handle->A = *(handle->PC + 1);
@@ -344,6 +444,26 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC += 2;
 
 		PRINT_DBG("%02X %*c LD A, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
+	case LD_CA:
+	{
+		handle->C = handle->A;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD C, A %*c", 5, ' ', 12, ' ');
+	} break;
+
+	case LD_DA:
+	{
+		handle->D = handle->A;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD D, A %*c", 5, ' ', 12, ' ');
 	} break;
 
 	case LD_HB:
@@ -366,6 +486,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c LD H, (HL) %*c", 5, ' ', 9, ' ');
 	} break;
 
+	case LD_HA:
+	{
+		handle->H = handle->A;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD H, A %*c", 5, ' ', 12, ' ');
+	} break;
+
 	case LD_HLA:
 	{
 		*(ram + handle->HL) = handle->A;
@@ -385,6 +515,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 		PRINT_DBG("%*c LD A, B %*c", 5, ' ', 12, ' ');
 
+	} break;
+
+	case LD_AE:
+	{
+		handle->A = handle->E;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD A, E %*c", 5, ' ', 12, ' ');
 	} break;
 
 	case LD_AH:
@@ -542,7 +682,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c POP HL %*c", 5, ' ', 13, ' ');
 	} break;
 
-	case LD_CA:
+	case LD_RCA:
 	{
 		*(ram + 0xFF00 + handle->C) = handle->A;
 		
@@ -667,7 +807,7 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->interrupt = 0;
 	}
 
-	PRINT_DBG("AF: %04X BC: %04X DE: %04X, HL: %04X SP: %04X I: %02X CYC: %llu\n", handle->AF, handle->BC, handle->DE, handle->HL, (uint16_t)(handle->SP - ram), *(ram + 0xFFFF), handle->total_cycles);
+	PRINT_DBG("AF: %04X BC: %04X DE: %04X HL: %04X SP: %04X I: %02X CYC: %llu\n", handle->AF, handle->BC, handle->DE, handle->HL, (uint16_t)(handle->SP - ram), *(ram + 0xFFFF), handle->total_cycles);
 
 	return 1;
 }

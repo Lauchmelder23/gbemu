@@ -19,27 +19,41 @@
 #define NOP			0x00
 #define LD_BCNN		0x01
 #define INC_BC		0x03
+#define INC_B		0x04
 #define DEC_B		0x05
 #define LD_BN		0x06
 #define INC_C		0x0C
+#define DEC_C		0x0D
 #define LD_CN		0x0E
+#define LD_DENN		0x11
+#define INC_DE		0x13
+#define RLA			0x17
 #define JR_N		0x18
+#define LD_ADE		0x1A
+#define LD_EN		0x1E
 #define LD_HLNN		0x21
+#define LDI_HLA		0x22
 #define INC_HL		0x23
 #define JR_NZ		0x20
 #define JR_Z		0x28
 #define LDI_AHL		0x2A
+#define LD_LN		0x2E
 #define JR_NC		0x30
 #define LD_SP		0x31
 #define LDD_HLA		0x32
 #define SCF			0x37
 #define JR_C		0x38
 #define INC_A		0x3C
+#define DEC_A		0x3D
 #define LD_AI		0x3E
+#define LD_CA		0x4F
+#define LD_DA		0x57
 #define LD_HB		0x60
 #define LD_HHL		0x66
+#define LD_HA		0x67
 #define LD_HLA		0x77
 #define LD_AB		0x78
+#define LD_AE		0x7B
 #define LD_AH		0x7C
 #define LD_AL		0x7D
 #define LD_AHL		0x7E
@@ -54,7 +68,7 @@
 #define CALL		0xCD
 #define LDH_NA		0xE0
 #define POP_HL		0xE1
-#define LD_CA		0xE2
+#define LD_RCA		0xE2
 #define PUSH_HL		0xE5
 #define AND_IMM		0xE6
 #define LD_NNA		0xEA
@@ -64,8 +78,6 @@
 #define PUSH_AF		0xF5
 #define LD_ANN		0xFA
 #define CP_IMM		0xFE
-
-extern const uint8_t BOOTLOADER[256];
 
 union flag_register
 {
@@ -126,6 +138,12 @@ struct cpu
 	uint8_t* SP;
 	uint64_t total_cycles;
 	uint8_t cycles;
+
+	enum
+	{
+		BOOT,
+		RUN
+	} state;
 
 	int8_t interrupt;
 };
