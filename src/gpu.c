@@ -1,13 +1,13 @@
 #include "gpu.h"
 
-init_gpu(struct gpu* gpu, uint8_t* ram)
+uint8_t init_gpu(struct gpu* gpu, uint8_t* ram)
 {
 	gpu->cycle = 1;
 	gpu->curline = ram + 0xFF44;
 	*(gpu->curline) = 0x00;
 }
 
-tick_gpu(struct gpu* gpu, uint8_t n)
+uint8_t tick_gpu(struct gpu* gpu, uint8_t n)
 {
 	for (uint8_t i = 0; i < n; i++)
 	{

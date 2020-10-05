@@ -821,7 +821,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 		handle->F.zero = (tmp == 0);
 		handle->F.negative = 1;
 		handle->F.half_carry = ((tmp & 0x10) != (handle->A & 0x10));
-		handle->F.carry = (tmp & 0x100);
+		handle->F.carry = ((tmp & 0x100) != 0);
 
 		handle->cycles = 8;
 		handle->PC += 2;

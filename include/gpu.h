@@ -10,8 +10,8 @@ struct gpu
 	uint64_t cycle;
 };
 
-init_gpu(struct gpu* gpu, uint8_t* ram);
+uint8_t init_gpu(struct gpu* gpu, uint8_t* ram);
 
-tick_gpu(struct	gpu* gpu, uint8_t n);
+uint8_t tick_gpu(struct	gpu* gpu, uint8_t n);
 
 #endif //_GPU_H_
