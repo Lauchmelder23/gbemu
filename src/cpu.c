@@ -9,7 +9,7 @@ uint8_t reset_cpu(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t*
 	handle->total_cycles = 0;
 	handle->PC = rom->data;
 
-	PRINT_DBG("----- STARTING BOOT SEQUENCE -----\n");
+	PRINT_DBG("----- STARTING BOOT SEQUENCE -----%*c\n", 0, ' ');
 	while (handle->PC >= rom->data && handle->PC < rom->data + 256)
 	{
 		if (!exec_instr(handle, gpu, rom, ram)) return 0;
@@ -17,7 +17,7 @@ uint8_t reset_cpu(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t*
 
 	handle->PC = rom->data + 0x100;
 	handle->state = RUN;
-	PRINT_DBG("----- FINISHED BOOT SEQUENCE -----\n");
+	PRINT_DBG("----- FINISHED BOOT SEQUENCE -----%*c\n", 0, ' ');
 	return 1;
 }
 
