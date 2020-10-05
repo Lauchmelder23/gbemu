@@ -30,11 +30,13 @@
 #define RLA			0x17
 #define JR_N		0x18
 #define LD_ADE		0x1A
+#define DEC_E		0x1D
 #define LD_EN		0x1E
 #define LD_HLNN		0x21
 #define LDI_HLA		0x22
 #define INC_HL		0x23
 #define JR_NZ		0x20
+#define INC_H		0x24
 #define JR_Z		0x28
 #define LDI_AHL		0x2A
 #define LD_LN		0x2E

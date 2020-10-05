@@ -261,6 +261,22 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 		PRINT_DBG("%*c LDI A, (DE) %*c", 5, ' ', 8, ' ');
 	} break;
 
+	case DEC_E:
+	{
+		uint8_t tmp = handle->E - 1;
+
+		handle->F.zero = (handle->E == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = ((tmp & 0x10) != (handle->E & 0x10));
+
+		handle->E = tmp;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c DEC E %*c", 5, ' ', 14, ' ');
+	} break;
+
 	case LD_EN:
 	{
 		handle->E = *(handle->PC + 1);
@@ -300,6 +316,22 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 		handle->PC++;
 
 		PRINT_DBG("%*c INC HL %*c", 5, ' ', 13, ' ');
+	} break;
+
+	case INC_H:
+	{
+		uint8_t tmp = handle->H + 1;
+
+		handle->F.zero = (handle->H == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = ((tmp & 0x10) != (handle->H & 0x10));
+
+		handle->H = tmp;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c INC A %*c", 5, ' ', 14, ' ');
 	} break;
 
 	case JR_NZ:
