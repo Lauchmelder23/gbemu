@@ -148,8 +148,8 @@ struct cpu
 	int8_t interrupt;
 };
 
-uint8_t reset_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram);
+uint8_t reset_cpu(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t* ram);
 
-uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram);
+uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t* ram);
 
 #endif //_CPU_H_

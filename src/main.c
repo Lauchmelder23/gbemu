@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "cpu.h"
+#include "gpu.h"
 #include "rom.h"
 
 int main(int argc, char** argv)
@@ -21,15 +22,23 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	struct cpu myCpu;
-	if (!reset_cpu(&myCpu, &myRom, ram)) 
+	struct gpu myGpu;
+	if (!init_gpu(&myGpu, ram))
 	{
 		free(ram);
 		return -1;
 	}
+
+	struct cpu myCpu;
+	if (!reset_cpu(&myCpu, &myGpu, &myRom, ram)) 
+	{
+		free(ram);
+		return -1;
+	}
+
 	return 0;
 
-	while (exec_instr(&myCpu, &myRom, ram));
+	while (exec_instr(&myCpu, &myGpu, &myRom, ram));
 
 	free(ram);
 	return 0;

@@ -1,7 +1,8 @@
 #include "cpu.h"
+#include "gpu.h"
 #include "rom.h"
 
-uint8_t reset_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram)
+uint8_t reset_cpu(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t* ram)
 {
 	handle->state = BOOT;
 	handle->cycles = 1;
@@ -11,7 +12,7 @@ uint8_t reset_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram)
 	PRINT_DBG("----- STARTING BOOT SEQUENCE -----\n");
 	while (handle->PC >= rom->data && handle->PC < rom->data + 256)
 	{
-		if (!exec_instr(handle, rom, ram)) return 0;
+		if (!exec_instr(handle, gpu, rom, ram)) return 0;
 	}
 
 	handle->PC = rom->data + 0x100;
@@ -81,7 +82,7 @@ uint8_t handle_cb_opcode(struct cpu* handle, struct rom* rom, uint8_t* ram)
 	return 1;
 }
 
-uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
+uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t* ram)
 {
 	handle->total_cycles++;
 	if (--(handle->cycles) > 0)
@@ -807,7 +808,9 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->interrupt = 0;
 	}
 
-	PRINT_DBG("AF: %04X BC: %04X DE: %04X HL: %04X SP: %04X I: %02X CYC: %llu\n", handle->AF, handle->BC, handle->DE, handle->HL, (uint16_t)(handle->SP - ram), *(ram + 0xFFFF), handle->total_cycles);
+	tick_gpu(gpu, handle->cycles);
+
+	PRINT_DBG("AF: %04X BC: %04X DE: %04X HL: %04X SP: %04X I: %02X Y: %02X CYC: %llu\n", handle->AF, handle->BC, handle->DE, handle->HL, (uint16_t)(handle->SP - ram), *(ram + 0xFFFF), *(gpu->curline), handle->total_cycles);
 
 	return 1;
 }
