@@ -38,18 +38,67 @@ const uint8_t BOOTLOADER[256] = {
 
 uint8_t reset_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram)
 {
-	handle->cycles = 0;
+	handle->cycles = 1;
 	handle->total_cycles = 0;
 	handle->PC = BOOTLOADER;
 
+	PRINT_DBG("----- STARTING BOOT SEQUENCE -----\n");
 	while (handle->PC >= BOOTLOADER && handle->PC < BOOTLOADER + 256)
 	{
 		if (!exec_instr(handle, rom, ram)) return 0;
 	}
 
 	handle->PC = rom->data + 0x100;
+	PRINT_DBG("----- FINISHED BOOT SEQUENCE -----\n");
 	return 1;
 }
+
+
+uint8_t handle_cb_opcode(struct cpu* handle, struct rom* rom, uint8_t* ram)
+{
+	uint8_t opcode = *(handle->PC + 1);
+	PRINT_DBG("%02X %*c ", opcode, 2, ' ');
+
+	uint8_t* reg = ram;
+	char* arg = "";
+
+	switch (opcode & 0x07)
+	{
+	case 0x0: reg = &(handle->B); handle->cycles = 8;		arg = "B";
+	case 0x1: reg = &(handle->C); handle->cycles = 8;		arg = "C";
+	case 0x2: reg = &(handle->D); handle->cycles = 8;		arg = "D";
+	case 0x3: reg = &(handle->E); handle->cycles = 8;		arg = "E";
+	case 0x4: reg = &(handle->H); handle->cycles = 8;		arg = "H";
+	case 0x5: reg = &(handle->L); handle->cycles = 8;		arg = "L";
+	case 0x6: reg = ram + handle->HL; handle->cycles = 16;	arg = "(HL)";
+	case 0x7: reg = &(handle->A); handle->cycles = 8;		arg = "A";
+	}
+
+	switch (opcode & 0xF0)
+	{
+	case 0x40:
+	case 0x50:
+	case 0x60:
+	case 0x70:
+	{
+		uint8_t bitmask = 0x01 << (((((opcode & 0xF0) - 0x40) >> 4) * 2) + ((opcode & 0x08) >> 3));
+
+		handle->F.zero = ((*reg & bitmask) == 0x00);
+		handle->F.negative = 0;
+		handle->F.half_carry = 1;
+		
+		PRINT_DBG("BIT %u, %s %*c", (((((opcode & 0xF0) - 0x40) >> 4) * 2) + ((opcode & 0x08) >> 3)), arg, 11, ' ');
+	} break;
+
+	default:
+		fprintf(stderr, "Unknown opcode: %02X %02X\n", *(handle->PC), opcode);
+		return 0;
+	}
+
+	handle->PC += 2;
+	return 1;
+}
+
 
 uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 {
@@ -332,6 +381,19 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c LD A, ($%04X) %*c", 5, ' ', handle->HL, 6, ' ');
 	} break;
 
+	case XOR_A:
+	{
+		handle->A ^= handle->A;
+
+		handle->F.val = 0x00;
+		handle->F.zero = (handle->A == 0x00);
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c XOR A, A %*c", 5, ' ', 11, ' ');
+	} break;
+
 	case OR_C:
 	{
 		handle->A |= handle->C;
@@ -402,6 +464,12 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->cycles = 8;
 
 		PRINT_DBG("%*c RET $%04X %*c", 5, ' ', (uint16_t)(handle->PC - rom->data), 10, ' ');
+	} break;
+
+	case SHOOT_ME:	// Please do it
+	{
+		if (!handle_cb_opcode(handle, rom, ram))
+			return 0;
 	} break;
 
 	case CALL:
@@ -547,13 +615,11 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		return 0;
 	}
 
-
 	if (interruptSet)
 	{
 		*(ram + 0xFFFF) = (interruptSet == 1) ? (uint8_t)1 : (uint8_t)0;
 		handle->interrupt = 0;
 	}
-
 
 	PRINT_DBG("AF: %04X BC: %04X DE: %04X, HL: %04X SP: %04X I: %02X CYC: %llu\n", handle->AF, handle->BC, handle->DE, handle->HL, (uint16_t)(handle->SP - ram), *(ram + 0xFFFF), handle->total_cycles);
 
