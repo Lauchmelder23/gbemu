@@ -830,7 +830,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	} break;
 
 	default:
-		fprintf(stderr, "Unknown opcode.");
+		fprintf(stderr, "Unknown opcode: %02X", opcode);
 		return 0;
 	}
 
