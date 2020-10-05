@@ -1,16 +1,18 @@
 #include "cpu.h"
 #include "rom.h"
 
-void init_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram)
+void reset_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram)
 {
+	// TODO: Nintendo logo power up sequence
+
 	handle->cycles = 1;
 	handle->total_cycles = 0;
 	handle->PC = rom->entrypoint;
-	handle->SP = ram;
-	handle->AF = 0x0000;
-	handle->BC = 0x0000;
-	handle->DE = 0x0000;
-	handle->HL = 0x0000;
+	handle->SP = ram + 0xFFFE;
+	handle->AF = 0x01B0;
+	handle->BC = 0x0013;
+	handle->DE = 0x00D8;
+	handle->HL = 0x014D;
 }
 
 uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
@@ -57,12 +59,14 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 	case DEC_B:
 	{
-		handle->B--;
+		uint16_t tmp = handle->B - 1;
 
 		handle->F.zero = (handle->B == 0);
 		handle->F.negative = 1;
-		handle->F.half_carry = (handle->B & 0x10);
-		handle->F.carry = (handle->B & 0x100);
+		handle->F.half_carry = ((tmp & 0x10) != (handle->B & 0x10));
+		handle->F.carry = (tmp & 0x100);
+
+		handle->B = tmp;
 
 		handle->cycles = 4;
 		handle->PC++;
@@ -82,9 +86,9 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 	case JR_N:
 	{
-		uint8_t offset = *(handle->PC + 1);
+		int8_t offset = *(handle->PC + 1);
 
-		PRINT_DBG("%02X %*c JR 0x%02X %*c", offset, 2, ' ', offset, 12, ' ');
+		PRINT_DBG("%02X %*c JR 0x%02X %*c", (uint8_t)offset, 2, ' ', (uint8_t)offset, 12, ' ');
 
 		handle->cycles = 8;
 		handle->PC += 2;
@@ -114,9 +118,9 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 	case JR_NZ:
 	{
-		uint8_t offset = *(handle->PC + 1);
+		int8_t offset = *(handle->PC + 1);
 
-		PRINT_DBG("%02X %*c JR NZ 0x%02X %*c", offset, 2, ' ', offset, 9, ' ');
+		PRINT_DBG("%02X %*c JR NZ 0x%02X %*c", (uint8_t)offset, 2, ' ', (uint8_t)offset, 9, ' ');
 
 		if (!handle->F.zero)
 			handle->PC += offset;
@@ -127,9 +131,9 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 	case JR_Z:
 	{
-		uint8_t offset = *(handle->PC + 1);
+		int8_t offset = *(handle->PC + 1);
 		
-		PRINT_DBG("%02X %*c JR Z 0x%02X %*c", offset, 2, ' ', offset, 10, ' ');
+		PRINT_DBG("%02X %*c JR Z 0x%02X %*c", (uint8_t)offset, 2, ' ', (uint8_t)offset, 10, ' ');
 		
 		if (handle->F.zero)
 			handle->PC += offset;
@@ -150,9 +154,9 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 	case JR_NC:
 	{
-		uint8_t offset = *(handle->PC + 1);
+		int8_t offset = *(handle->PC + 1);
 
-		PRINT_DBG("%02X %*c JR NC 0x%02X %*c", offset, 2, ' ', offset, 9, ' ');
+		PRINT_DBG("%02X %*c JR NC 0x%02X %*c", (uint8_t)offset, 2, ' ', (uint8_t)offset, 9, ' ');
 
 		if (!handle->F.carry)
 			handle->PC += offset;
@@ -207,11 +211,13 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 
 	case INC_A:
 	{
-		handle->A++;
+		uint8_t tmp = handle->A + 1;
 
 		handle->F.zero = (handle->A == 0);
 		handle->F.negative = 1;
-		handle->F.half_carry = (handle->A & 0x10);
+		handle->F.half_carry = ((tmp & 0x10) != (handle->A & 0x10));
+
+		handle->A = tmp;
 
 		handle->cycles = 4;
 		handle->PC++;
@@ -303,6 +309,17 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c OR C %*c", 5, ' ', 15, ' ');
 	} break;
 
+	case POP_BC:
+	{
+		handle->B = POP();
+		handle->C = POP();
+
+		handle->cycles = 12;
+		handle->PC++;
+
+		PRINT_DBG("%*c POP BC %*c", 5, ' ', 13, ' ');
+	} break;
+
 	case JP:
 	{
 		uint8_t lo_byte = *(handle->PC + 1);
@@ -313,6 +330,20 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC = rom->data + jp_addr;
 
 		PRINT_DBG("%02X %02X JP $%04X %*c", lo_byte, hi_byte, jp_addr, 11, ' ');
+	} break;
+
+	case CALL_NZ:
+	{
+		uint16_t addr = (*(handle->PC + 2) << 8) | *(handle->PC + 1);
+
+		PRINT_DBG("%02X %02X CALL NZ $%04X %*c", *(handle->PC + 1), *(handle->PC + 2), addr, 6, ' ');
+
+		if (handle->F.zero == 0)
+			handle->PC = rom->data + addr;
+		else
+			handle->PC += 3;
+
+		handle->cycles = 12;
 	} break;
 
 	case PUSH_BC:
@@ -382,6 +413,20 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c PUSH HL %*c", 5, ' ', 12, ' ');
 	} break;
 
+	case AND_IMM:
+	{
+		handle->A &= *(handle->PC + 1);
+
+		handle->F.val = 0x00;
+		handle->F.zero = (handle->A == 0x00);
+		handle->F.half_carry = 0x01;
+
+		handle->cycles = 8;
+		handle->PC += 2;
+
+		PRINT_DBG("%02X %*c AND A, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 8, ' ');
+	} break;
+
 	case LD_NNA:
 	{
 		uint16_t addr = ((uint16_t)(*(handle->PC + 2)) << 8) | *(handle->PC + 1);
@@ -435,14 +480,25 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c PUSH AF %*c", 5, ' ', 12, ' ');
 	} break;
 
+	case LD_ANN:
+	{
+		uint16_t addr = (*(handle->PC + 2) << 8) | (*(handle->PC + 1));
+		handle->A = *(ram + addr);
+
+		handle->cycles = 16;
+		handle->PC += 3;
+
+		PRINT_DBG("%02X %02X LD A, ($%04X) %*c", *(handle->PC - 2), *(handle->PC - 1), addr, 6, ' ');
+	} break;
+
 	case CP_IMM:
 	{
-		uint16_t tmp = handle->A - *(handle->PC + 1);
+		uint16_t tmp = (uint16_t)handle->A - *(handle->PC + 1);
 
 		handle->F.zero = (tmp == 0);
 		handle->F.negative = 1;
-		handle->F.half_carry = (tmp & 0x10);
-		handle->F.half_carry = (tmp & 0x100);
+		handle->F.half_carry = ((tmp & 0x10) != (handle->A & 0x10));
+		handle->F.carry = (tmp & 0x100);
 
 		handle->cycles = 8;
 		handle->PC += 2;

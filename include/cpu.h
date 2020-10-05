@@ -41,18 +41,22 @@
 #define LD_AL	0x7D
 #define LD_AHL	0x7E
 #define OR_C	0xB1
+#define POP_BC	0xC1
 #define JP      0xC3
+#define CALL_NZ 0xC4
 #define PUSH_BC 0xC5
 #define RET		0xC9
 #define CALL	0xCD
 #define LDH_NA  0xE0
 #define POP_HL  0xE1
 #define PUSH_HL	0xE5
+#define AND_IMM 0xE6
 #define LD_NNA  0xEA
 #define LDH_AN	0xF0
 #define POP_AF	0xF1
 #define DI      0xF3
 #define PUSH_AF 0xF5
+#define LD_ANN	0xFA
 #define CP_IMM	0xFE
 
 union flag_register
@@ -118,7 +122,7 @@ struct cpu
 	int8_t interrupt;
 };
 
-void init_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram);
+void reset_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram);
 
 uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram);
 
