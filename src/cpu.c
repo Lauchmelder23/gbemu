@@ -13,6 +13,7 @@ uint8_t reset_cpu(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t*
 	while (handle->PC >= rom->data && handle->PC < rom->data + 256)
 	{
 		if (!exec_instr(handle, gpu, rom, ram)) return 0;
+		tick_gpu(gpu);
 	}
 
 	handle->PC = rom->data + 0x100;
@@ -839,8 +840,6 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 		*(ram + 0xFFFF) = (interruptSet == 1) ? (uint8_t)1 : (uint8_t)0;
 		handle->interrupt = 0;
 	}
-
-	tick_gpu(gpu, handle->cycles);
 
 	PRINT_DBG("AF: %04X BC: %04X DE: %04X HL: %04X SP: %04X I: %02X Y: %02X CYC: %llu\n", handle->AF, handle->BC, handle->DE, handle->HL, (uint16_t)(handle->SP - ram), *(ram + 0xFFFF), *(gpu->curline), handle->total_cycles);
 

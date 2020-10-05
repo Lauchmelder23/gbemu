@@ -38,7 +38,10 @@ int main(int argc, char** argv)
 
 	return 0;
 
-	while (exec_instr(&myCpu, &myGpu, &myRom, ram));
+	while (exec_instr(&myCpu, &myGpu, &myRom, ram))
+	{
+		tick_gpu(&myGpu);
+	}
 
 	free(ram);
 	return 0;
