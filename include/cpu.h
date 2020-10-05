@@ -13,6 +13,7 @@
 #include <stdint.h>
 
 #include "rom.h"
+#include "gpu.h"
 
 // TODO: there must be a smarter way to do this
 
