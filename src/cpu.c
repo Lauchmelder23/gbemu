@@ -169,6 +169,32 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%02X %*c LD B, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
 	} break;
 
+	case INC_C:
+	{
+		uint8_t tmp = handle->C + 1;
+
+		handle->F.zero = (handle->C == 0);
+		handle->F.negative = 0;
+		handle->F.half_carry = ((tmp & 0xF) | (handle->C & 0xF));
+
+		handle->C = tmp;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c INC C %*c", 5, ' ', 14, ' ');
+	} break;
+
+	case LD_CN:
+	{
+		handle->C = *(handle->PC + 1);
+
+		handle->cycles = 8;
+		handle->PC += 2;
+
+		PRINT_DBG("%02X %*c LD C, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
 	case JR_N:
 	{
 		int8_t offset = *(handle->PC + 1);
@@ -340,6 +366,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		PRINT_DBG("%*c LD H, (HL) %*c", 5, ' ', 9, ' ');
 	} break;
 
+	case LD_HLA:
+	{
+		*(ram + handle->HL) = handle->A;
+		
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD (HL), A %*c", 5, ' ', 9, ' ');
+	} break;
+
 	case LD_AB:
 	{
 		handle->A = handle->B;
@@ -504,6 +540,16 @@ uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram)
 		handle->PC++;
 
 		PRINT_DBG("%*c POP HL %*c", 5, ' ', 13, ' ');
+	} break;
+
+	case LD_CA:
+	{
+		*(ram + 0xFF00 + handle->C) = handle->A;
+		
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c LD ($FF00+%02X), A %*c", 5, ' ', handle->C, 3, ' ');
 	} break;
 
 	case PUSH_HL:
