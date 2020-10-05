@@ -59,6 +59,8 @@
 #define LD_ANN	0xFA
 #define CP_IMM	0xFE
 
+extern const uint8_t BOOTLOADER[256];
+
 union flag_register
 {
 	struct
@@ -122,7 +124,7 @@ struct cpu
 	int8_t interrupt;
 };
 
-void reset_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram);
+uint8_t reset_cpu(struct cpu* handle, struct rom* rom, uint8_t* ram);
 
 uint8_t exec_instr(struct cpu* handle, struct rom* rom, uint8_t* ram);
 

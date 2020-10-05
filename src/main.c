@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 	}
 
 	struct cpu myCpu;
-	reset_cpu(&myCpu, &myRom, ram);
+	if (!reset_cpu(&myCpu, &myRom, ram)) return 1;
 
 	while (exec_instr(&myCpu, &myRom, ram));
 
