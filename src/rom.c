@@ -58,7 +58,7 @@ void readROM(const char* path, struct rom* buf)
 	fread(buf->data, sizeof(uint8_t), size, fp);
 
 	for (uint16_t i = 0; i < 0x100; i++)
-		buf->data[i] = BOOTLOADER[i];
+		*(buf->data + i) = (uint8_t)BOOTLOADER[i];
 
 	buf->entrypoint = buf->data + 0x0100;
 	buf->nin_logo = buf->data + 0x0104;
