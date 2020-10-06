@@ -30,6 +30,6 @@ struct rom
 	uint8_t* code;
 };
 
-void readROM(const char* path, struct rom* buf);
+void readROM(const char* path, struct rom* buf, uint8_t* ram);
 
 #endif // _ROM_H_

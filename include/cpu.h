@@ -28,6 +28,8 @@
 #define LD_CN		0x0E
 #define LD_DENN		0x11
 #define INC_DE		0x13
+#define DEC_D		0x15
+#define LD_DN		0x16
 #define RLA			0x17
 #define JR_N		0x18
 #define LD_ADE		0x1A
@@ -60,8 +62,11 @@
 #define LD_AH		0x7C
 #define LD_AL		0x7D
 #define LD_AHL		0x7E
+#define ADD_HL		0x86
+#define SUB_B		0x90
 #define XOR_A		0xAF
 #define OR_C		0xB1
+#define CP_HL		0xBE
 #define POP_BC		0xC1
 #define JP			0xC3
 #define CALL_NZ		0xC4

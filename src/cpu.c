@@ -129,7 +129,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	{
 		uint8_t tmp = handle->B + 1;
 
-		handle->F.zero = (handle->B == 0);
+		handle->F.zero = (tmp == 0);
 		handle->F.negative = 0;
 		handle->F.half_carry = ((tmp & 0xF) | (handle->B & 0xF));
 
@@ -145,7 +145,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	{
 		uint8_t tmp = handle->B - 1;
 
-		handle->F.zero = (handle->B == 0);
+		handle->F.zero = (tmp == 0);
 		handle->F.negative = 1;
 		handle->F.half_carry = ((tmp & 0x10) != (handle->B & 0x10));
 
@@ -171,7 +171,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	{
 		uint8_t tmp = handle->C + 1;
 
-		handle->F.zero = (handle->C == 0);
+		handle->F.zero = (tmp == 0);
 		handle->F.negative = 0;
 		handle->F.half_carry = ((tmp & 0xF) | (handle->C & 0xF));
 
@@ -187,7 +187,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	{
 		uint8_t tmp = handle->C - 1;
 
-		handle->F.zero = (handle->C == 0);
+		handle->F.zero = (tmp == 0);
 		handle->F.negative = 1;
 		handle->F.half_carry = ((tmp & 0x10) != (handle->C & 0x10));
 
@@ -230,6 +230,32 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 		PRINT_DBG("%*c INC DE %*c", 5, ' ', 13, ' ');
 	} break;
 
+	case DEC_D:
+	{
+		uint8_t tmp = handle->D - 1;
+
+		handle->F.zero = (tmp == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = ((tmp & 0x10) != (handle->D & 0x10));
+
+		handle->D = tmp;
+
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c DEC D %*c", 5, ' ', 14, ' ');
+	} break;
+
+	case LD_DN:
+	{
+		handle->C = *(handle->PC + 1);
+
+		handle->cycles = 8;
+		handle->PC += 2;
+
+		PRINT_DBG("%02X %*c LD D, 0x%02X %*c", *(handle->PC - 1), 2, ' ', *(handle->PC - 1), 9, ' ');
+	} break;
+
 	case RLA:
 	{
 		handle->F.carry = ((handle->A & 0x80) != 0);
@@ -266,7 +292,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	{
 		uint8_t tmp = handle->E - 1;
 
-		handle->F.zero = (handle->E == 0);
+		handle->F.zero = (tmp == 0);
 		handle->F.negative = 1;
 		handle->F.half_carry = ((tmp & 0x10) != (handle->E & 0x10));
 
@@ -323,7 +349,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	{
 		uint8_t tmp = handle->H + 1;
 
-		handle->F.zero = (handle->H == 0);
+		handle->F.zero = (tmp == 0);
 		handle->F.negative = 1;
 		handle->F.half_carry = ((tmp & 0x10) != (handle->H & 0x10));
 
@@ -338,6 +364,9 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	case JR_NZ:
 	{
 		int8_t offset = *(handle->PC + 1);
+
+		//if (*(gpu->curline) == 0x90)
+			//__debugbreak();
 
 		PRINT_DBG("%02X %*c JR NZ 0x%02X %*c", (uint8_t)offset, 2, ' ', (uint8_t)offset, 9, ' ');
 
@@ -442,7 +471,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	{
 		uint8_t tmp = handle->A + 1;
 
-		handle->F.zero = (handle->A == 0);
+		handle->F.zero = (tmp == 0);
 		handle->F.negative = 1;
 		handle->F.half_carry = ((tmp & 0x10) != (handle->A & 0x10));
 
@@ -458,7 +487,7 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 	{
 		uint8_t tmp = handle->A - 1;
 
-		handle->F.zero = (handle->A == 0);
+		handle->F.zero = (tmp == 0);
 		handle->F.negative = 1;
 		handle->F.half_carry = ((tmp & 0x10) != (handle->A & 0x10));
 
@@ -591,6 +620,40 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 		PRINT_DBG("%*c LD A, ($%04X) %*c", 5, ' ', handle->HL, 6, ' ');
 	} break;
 
+	case ADD_HL:
+	{
+		uint16_t tmp = handle->A + *(ram + handle->HL);
+
+		handle->F.zero = ((tmp & 0x00FF) == 0);
+		handle->F.negative = 0;
+		handle->F.half_carry = ((tmp & 0x0010) != (handle->A & 0x0010));
+		handle->F.carry = ((tmp & 0x0100) != (handle->A & 0x0100));
+
+		handle->A = tmp;
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c ADD (HL) %*c", 5, ' ', 11, ' ');
+	} break;
+
+	case SUB_B:
+	{
+		uint16_t tmp = handle->A - handle->B;
+
+		handle->F.zero = ((tmp & 0x00FF) == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = ((tmp & 0x0010) != (handle->A & 0x0010));
+		handle->F.carry = ((tmp & 0x0100) != (handle->A & 0x0100));
+
+		handle->A = tmp;
+		
+		handle->cycles = 4;
+		handle->PC++;
+
+		PRINT_DBG("%*c SUB B %*c", 5, ' ', 14, ' ');
+	} break;
+
 	case XOR_A:
 	{
 		handle->A ^= handle->A;
@@ -615,6 +678,21 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 		handle->PC++;
 
 		PRINT_DBG("%*c OR C %*c", 5, ' ', 15, ' ');
+	} break;
+
+	case CP_HL:
+	{
+		uint16_t tmp = (uint16_t)handle->A - *(rom->data + handle->HL);
+
+		handle->F.zero = (tmp == 0);
+		handle->F.negative = 1;
+		handle->F.half_carry = ((tmp & 0x10) != (handle->A & 0x10));
+		handle->F.carry = ((tmp & 0x100) != 0);
+
+		handle->cycles = 8;
+		handle->PC++;
+
+		PRINT_DBG("%*c CP (HL) %*c", 5, ' ', 12, ' ');
 	} break;
 
 	case POP_BC:
@@ -830,8 +908,8 @@ uint8_t exec_instr(struct cpu* handle, struct gpu* gpu, struct rom* rom, uint8_t
 		PRINT_DBG("%*c CP 0x%02X %*c", 5, ' ', *(handle->PC - 1), 12, ' ');
 	} break;
 
-	default:
-		fprintf(stderr, "Unknown opcode: %02X", opcode);
+	 default:
+		 fprintf(stderr, "Unknown opcode: %02X", opcode);
 		return 0;
 	}
 

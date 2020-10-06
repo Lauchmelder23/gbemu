@@ -35,7 +35,7 @@ const uint8_t BOOTLOADER[256] = {
 	0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50
 };
 
-void readROM(const char* path, struct rom* buf)
+void readROM(const char* path, struct rom* buf, uint8_t* ram)
 {
 	FILE* fp = fopen(path, "r");
 	if (fp == NULL)
@@ -48,7 +48,7 @@ void readROM(const char* path, struct rom* buf)
 	fseek(fp, 0L, SEEK_END);
 	size = ftell(fp);
 	rewind(fp);
-	buf->data = (uint8_t*)malloc(size);
+	buf->data = ram;
 	if (buf->data == NULL)
 	{
 		fprintf(stderr, "ROM memory allocation failed.\n");
